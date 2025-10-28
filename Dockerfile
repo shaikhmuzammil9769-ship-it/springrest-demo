@@ -1,25 +1,26 @@
-# Use OpenJDK 22 as base image
-FROM openjdk:22-jdk
-
-# Set working directory
+# Use Maven with JDK to build the app
+FROM maven:3.9.6-eclipse-temurin-22 AS build
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY pom.xml ./
-COPY mvnw ./
-COPY .mvn .mvn
+# Copy pom.xml and download dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
-# Copy source code
+# Copy the rest of the project
 COPY src ./src
 
-# Build the application (this runs mvn package)
-RUN ./mvnw clean package -DskipTests
+# Build the project
+RUN mvn clean package -DskipTests
 
-# Copy the built jar (adjust if name differs)
-COPY target/SpringRestDemo-15-0.0.1-SNAPSHOT.jar app.jar
+# ---- Runtime stage ----
+FROM openjdk:22-jdk
+WORKDIR /app
+
+# Copy the jar from the build stage
+COPY --from=build /app/target/*.jar app.jar
 
 # Expose port 8080
 EXPOSE 8080
 
-# Run the app
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
