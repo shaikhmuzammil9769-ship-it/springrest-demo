@@ -1,14 +1,25 @@
-# Use an official OpenJDK image
+# Use OpenJDK 22 as base image
 FROM openjdk:22-jdk
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy your built JAR file into the container
+# Copy Maven wrapper and pom.xml
+COPY pom.xml ./
+COPY mvnw ./
+COPY .mvn .mvn
+
+# Copy source code
+COPY src ./src
+
+# Build the application (this runs mvn package)
+RUN ./mvnw clean package -DskipTests
+
+# Copy the built jar (adjust if name differs)
 COPY target/SpringRestDemo-15-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose port 8080 (Render uses 10000 internally but we map it)
+# Expose port 8080
 EXPOSE 8080
 
-# Run the jar
+# Run the app
 ENTRYPOINT ["java", "-jar", "app.jar"]
